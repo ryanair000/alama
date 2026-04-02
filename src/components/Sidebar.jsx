@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
-export default function Sidebar() {
+export default function Sidebar({ inDrawer }) {
   const { units, activeUnitId, setActiveUnitId, createUnit, deleteUnit } = useApp();
   const [showForm, setShowForm] = useState(false);
   const [code, setCode] = useState('');
@@ -23,18 +23,31 @@ export default function Sidebar() {
     }
   };
 
-  return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <h2>My Units</h2>
-        <button
-          className="btn btn-sm btn-create"
-          onClick={() => setShowForm(!showForm)}
-          title={showForm ? 'Cancel' : 'Create new unit'}
-        >
-          {showForm ? '✕ Cancel' : '+ New Unit'}
-        </button>
-      </div>
+  const content = (
+    <>
+      {!inDrawer && (
+        <div className="sidebar-header">
+          <h2>My Units</h2>
+          <button
+            className="btn btn-sm btn-create"
+            onClick={() => setShowForm(!showForm)}
+            title={showForm ? 'Cancel' : 'Create new unit'}
+          >
+            {showForm ? '✕ Cancel' : '+ New Unit'}
+          </button>
+        </div>
+      )}
+
+      {inDrawer && (
+        <div className="drawer-new-unit">
+          <button
+            className="btn btn-primary btn-block"
+            onClick={() => setShowForm(!showForm)}
+          >
+            {showForm ? '✕ Cancel' : '+ New Unit'}
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <form className="sidebar-form" onSubmit={handleCreate}>
@@ -116,6 +129,9 @@ export default function Sidebar() {
           </span>
         </div>
       )}
-    </aside>
+    </>
   );
+
+  if (inDrawer) return content;
+  return <aside className="sidebar">{content}</aside>;
 }

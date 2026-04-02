@@ -304,6 +304,47 @@ export default function ResultsTable() {
         </table>
       </div>
 
+      {/* Mobile card view — visible on small screens */}
+      <div className="mobile-results-cards">
+        {sorted.map((student, idx) => {
+          const isFailing = (student.computedTotal ?? 0) < passMark;
+          return (
+            <div key={student.id} className={`student-card ${isFailing ? 'student-card-fail' : ''}`}>
+              <div className="student-card-header">
+                <div className="student-card-info">
+                  <span className="student-card-num">{idx + 1}</span>
+                  <div>
+                    <div className="student-card-name">{renderCell(student, 'name')}</div>
+                    <div className="student-card-reg">{renderCell(student, 'regNo')}</div>
+                  </div>
+                </div>
+                <div className="student-card-grade-wrap">
+                  <span className={`student-card-grade ${isFailing ? 'grade-fail' : 'grade-pass'}`}>
+                    {student.computedGrade}
+                  </span>
+                  <button className="btn-icon-sm" onClick={() => handleRemove(student.id)}
+                    title="Remove" aria-label={`Remove ${student.name || 'student'}`}>✕</button>
+                </div>
+              </div>
+              <div className="student-card-marks">
+                {mode === 'components' && components.map(c => (
+                  <div key={c.id} className="student-card-mark">
+                    <span className="student-card-mark-label">{c.name}<span className="th-max">/{c.maxMark}</span></span>
+                    <span className="student-card-mark-value">{renderCell(student, c.id, c.maxMark)}</span>
+                  </div>
+                ))}
+                <div className="student-card-mark student-card-total">
+                  <span className="student-card-mark-label">Total</span>
+                  <span className="student-card-mark-value">
+                    {mode === 'total' ? renderCell(student, 'total', 100) : <strong>{student.computedTotal ?? 0}</strong>}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       <div className="table-footer">
         <span className="table-footer-hint">💡 Click any cell to edit · Press Enter to save · Esc to cancel</span>
       </div>

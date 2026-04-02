@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -39,7 +39,6 @@ function UnitView() {
     );
   }
 
-  // Show onboarding wizard for units that haven't completed setup
   if (!activeUnit.setupComplete) {
     return (
       <OnboardingWizard onComplete={() => setTab('results')} />
@@ -101,7 +100,7 @@ function UnitView() {
         </div>
       )}
 
-      <nav className="tab-nav">
+      <nav className="tab-nav desktop-tabs">
         <button className={`tab ${tab === 'results' ? 'active' : ''}`} onClick={() => setTab('results')}>
           📋 Results
         </button>
@@ -109,6 +108,8 @@ function UnitView() {
           📊 Statistics
         </button>
       </nav>
+
+      <MobileBottomTabs tab={tab} setTab={setTab} />
 
       {tab === 'results' && (
         <>
@@ -122,29 +123,28 @@ function UnitView() {
   );
 }
 
-function MobileNav() {
-  const { units, activeUnitId, setActiveUnitId } = useApp();
-  const [open, setOpen] = useState(false);
-
+function MobileBottomTabs({ tab, setTab }) {
   return (
-    <div className="mobile-nav">
-      <button className="btn btn-sm btn-outline" onClick={() => setOpen(!open)}>
-        ☰ Units ({units.length})
+    <nav className="mobile-bottom-tabs" role="tablist">
+      <button
+        className={`mobile-tab ${tab === 'results' ? 'active' : ''}`}
+        onClick={() => setTab('results')}
+        role="tab"
+        aria-selected={tab === 'results'}
+      >
+        <span className="mobile-tab-icon">📋</span>
+        <span className="mobile-tab-label">Results</span>
       </button>
-      {open && (
-        <div className="mobile-dropdown">
-          {units.map(u => (
-            <button
-              key={u.id}
-              className={`mobile-unit ${u.id === activeUnitId ? 'active' : ''}`}
-              onClick={() => { setActiveUnitId(u.id); setOpen(false); }}
-            >
-              {u.code} — {u.name}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+      <button
+        className={`mobile-tab ${tab === 'stats' ? 'active' : ''}`}
+        onClick={() => setTab('stats')}
+        role="tab"
+        aria-selected={tab === 'stats'}
+      >
+        <span className="mobile-tab-icon">📊</span>
+        <span className="mobile-tab-label">Statistics</span>
+      </button>
+    </nav>
   );
 }
 
@@ -160,22 +160,62 @@ function StorageWarning() {
   );
 }
 
+function AppShell() {
+  const { activeUnitId } = useApp();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Close drawer when a unit is selected (mobile)
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [activeUnitId]);
+
+  // Prevent body scroll when drawer is open
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [drawerOpen]);
+
+  return (
+    <div className="app">
+      <Header onMenuClick={() => setDrawerOpen(true)} />
+      <StorageWarning />
+      <div className="app-body">
+        {/* Desktop sidebar — always visible on large screens */}
+        <div className="sidebar-desktop">
+          <Sidebar />
+        </div>
+
+        {/* Mobile drawer overlay */}
+        {drawerOpen && (
+          <div className="drawer-overlay" onClick={() => setDrawerOpen(false)}>
+            <aside className="drawer" onClick={e => e.stopPropagation()}>
+              <div className="drawer-header">
+                <h2>My Units</h2>
+                <button className="btn-icon-sm" onClick={() => setDrawerOpen(false)} aria-label="Close menu">✕</button>
+              </div>
+              <Sidebar inDrawer />
+            </aside>
+          </div>
+        )}
+
+        <main className="main-content">
+          <ErrorBoundary>
+            <UnitView />
+          </ErrorBoundary>
+        </main>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AppProvider>
-      <div className="app">
-        <Header />
-        <StorageWarning />
-        <div className="app-body">
-          <Sidebar />
-          <main className="main-content">
-            <MobileNav />
-            <ErrorBoundary>
-              <UnitView />
-            </ErrorBoundary>
-          </main>
-        </div>
-      </div>
+      <AppShell />
     </AppProvider>
   );
 }
